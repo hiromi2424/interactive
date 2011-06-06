@@ -17,11 +17,11 @@ class Interactive extends InteractiveAppModel {
 				continue;
 			}
 
-			if (!$type = $this->__findCmdType($cmd)) {
+			if (!$type = $this->_findCmdType($cmd)) {
 				continue;
 			}
 
-			$func = sprintf('__%sCall', $type);
+			$func = sprintf('_%sCall', $type);
 			$output = $this->{$func}($cmd);
 			$results[] = array(
 				'cmd' => $cmd,
@@ -33,13 +33,13 @@ class Interactive extends InteractiveAppModel {
 		return $results;
 	}
 
-	private function __classCall($cmd) {
+	protected function _classCall($cmd) {
 		$cmd = str_replace('$this->', '', $cmd);
 		list($className, $function) = preg_split('/(::|->)/', $cmd, 2);
-		$Class = $this->__getClass($className);
+		$Class = $this->_getClass($className);
 
 		if (!$Class) {
-			return $this->__codeCall($cmd);
+			return $this->_codeCall($cmd);
 		}
 
 		preg_match('/^([a-zA-Z_]{1,})\((.{0,})\)/', $function, $matches);
@@ -59,18 +59,18 @@ class Interactive extends InteractiveAppModel {
 		return call_user_func_array(array($Class, $matches[1]), $args);
 	}
 
-	private function __sqlCall($cmd) {
+	protected function _sqlCall($cmd) {
 		return $this->query($cmd);
 	}
 
-	private function __codeCall($cmd) {
+	protected function _codeCall($cmd) {
 		return eval('return ' . $cmd . ';');
 	}
 
-	private function __getClass($className) {
+	protected function _getClass($className) {
 		$this->type = null;
 		$classType = false;
-		$className = $this->__fixClassName($className);
+		$className = $this->_fixClassName($className);
 
 		if ($this->type) {
 			$types = array($this->type);
@@ -128,7 +128,7 @@ class Interactive extends InteractiveAppModel {
 		return false;
 	}
 
-	private function __fixClassName($className) {
+	protected function _fixClassName($className) {
 		if (stripos($className, 'component') !== false) {
 			$this->type = 'component';
 		}
@@ -140,7 +140,7 @@ class Interactive extends InteractiveAppModel {
 		return ucfirst(preg_replace('/(\$|controller|component)/i', '', $className));
 	}
 
-	private function __findCmdType($cmd) {
+	protected function _findCmdType($cmd) {
 		if (preg_match('/(::|->)/', $cmd)) {
 			return 'class';
 		}
