@@ -1,12 +1,12 @@
 <?php
 class Interactive extends InteractiveAppModel {
-	var $useTable = false;
-	var $objectCache = true;
-	var $objectPath = null;
-	var $raw = false;
-	var $type = null;
+	public $useTable = false;
+	public $objectCache = true;
+	public $objectPath = null;
+	public $raw = false;
+	public $type = null;
 
-	function process($cmds) {
+	public function process($cmds) {
 		$cmds = explode(";", $cmds);
 
 		$results = array();
@@ -33,7 +33,7 @@ class Interactive extends InteractiveAppModel {
 		return $results;
 	}
 
-	function __classCall($cmd) {
+	private function __classCall($cmd) {
 		$cmd = str_replace('$this->', '', $cmd);
 		list($className, $function) = preg_split('/(::|->)/', $cmd, 2);
 		$Class = $this->__getClass($className);
@@ -59,15 +59,15 @@ class Interactive extends InteractiveAppModel {
 		return call_user_func_array(array($Class, $matches[1]), $args);
 	}
 
-	function __sqlCall($cmd) {
+	private function __sqlCall($cmd) {
 		return $this->query($cmd);
 	}
 
-	function __codeCall($cmd) {
+	private function __codeCall($cmd) {
 		return eval('return ' . $cmd . ';');
 	}
 
-	function __getClass($className) {
+	private function __getClass($className) {
 		$this->type = null;
 		$classType = false;
 		$className = $this->__fixClassName($className);
@@ -128,7 +128,7 @@ class Interactive extends InteractiveAppModel {
 		return false;
 	}
 
-	function __fixClassName($className) {
+	private function __fixClassName($className) {
 		if (stripos($className, 'component') !== false) {
 			$this->type = 'component';
 		}
@@ -140,7 +140,7 @@ class Interactive extends InteractiveAppModel {
 		return ucfirst(preg_replace('/(\$|controller|component)/i', '', $className));
 	}
 
-	function __findCmdType($cmd) {
+	private function __findCmdType($cmd) {
 		if (preg_match('/(::|->)/', $cmd)) {
 			return 'class';
 		}

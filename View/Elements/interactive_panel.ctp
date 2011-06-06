@@ -1,7 +1,7 @@
 <h2> <?php __d('interactive', 'Interactive Panel'); ?></h2>
 
 <?php
-	echo $form->create('Interactive', array(
+	echo $this->Form->create('Interactive', array(
 		'url' => array(
 			'admin' => false,
 			'plugin' => 'interactive',
@@ -10,13 +10,13 @@
 		),
 		'id' => 'interactive-form'
 	));
-	echo $form->input('Interactive.cmd', array(
+	echo $this->Form->input('Interactive.cmd', array(
 		'cols' => '100',
 		'label' => false,
 		'type' => 'textarea'
 	));
-	echo $html->image('/interactive/img/ajax-loader.gif', array('id' => 'interactive-indicator'));
-	echo $form->end('Execute');
+	echo $this->Html->image('/interactive/img/ajax-loader.gif', array('id' => 'interactive-indicator'));
+	echo $this->Form->end('Execute');
 ?>
 <br />
 <div id="interactive-results"></div>

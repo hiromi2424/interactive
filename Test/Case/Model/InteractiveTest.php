@@ -1,23 +1,23 @@
 <?php
 class InteractiveTestCase extends CakeTestCase {
-	var $Interactive = null;
-	var $fixtures = array('core.post');
+	public $Interactive = null;
+	public $fixtures = array('core.post');
 
-	function startCase() {
+	public function startCase() {
 		$this->Interactive = ClassRegistry::init('Interactive.Interactive');
 		$this->Interactive->objectCache = false;
 		$this->Interactive->setDataSource('test_suite');
 	}
 
-	function startTest() {
+	public function startTest() {
 		$this->Interactive->objectPath = null;
 	}
 
-	function testInstance() {
+	public function testInstance() {
 		$this->assertTrue(is_a($this->Interactive, 'Interactive'));
 	}
 
-	function testFindCmdTypeClass() {
+	public function testFindCmdTypeClass() {
 		$type = $this->Interactive->__findCmdType('User::find("all")');
 		$this->assertEqual('class', $type);
 
@@ -31,7 +31,7 @@ class InteractiveTestCase extends CakeTestCase {
 		$this->assertEqual('class', $type);
 	}
 
-	function testFindCmdTypeSql() {
+	public function testFindCmdTypeSql() {
 		$type = $this->Interactive->__findCmdType('SELECT * FROM users');
 		$this->assertEqual('sql', $type);
 
@@ -42,12 +42,12 @@ class InteractiveTestCase extends CakeTestCase {
 		$this->assertEqual('sql', $type);
 	}
 
-	function testFindCmdTypeUnknown() {
+	public function testFindCmdTypeUnknown() {
 		$type = $this->Interactive->__findCmdType('__("test")');
 		$this->assertEqual('code', $type);
 	}
 
-	function testSqlCall() {
+	public function testSqlCall() {
 		$result = $this->Interactive->__sqlCall('SELECT * FROM posts');
 		$this->assertEqual(3, count($result));
 
@@ -59,7 +59,7 @@ class InteractiveTestCase extends CakeTestCase {
 		$this->assertEqual("Test Post", $result[0]['posts']['title']);
 	}
 
-	function testCodeCall() {
+	public function testCodeCall() {
 		$result = $this->Interactive->__codeCall('is_array(array(1,2,3))');
 		$this->assertTrue($result);
 
@@ -70,7 +70,7 @@ class InteractiveTestCase extends CakeTestCase {
 		$this->assertEqual("one", $result);
 	}
 
-	function testFixClassName() {
+	public function testFixClassName() {
 		$result = $this->Interactive->__fixClassName('html');
 		$this->assertEqual('Html', $result);
 
@@ -84,7 +84,7 @@ class InteractiveTestCase extends CakeTestCase {
 		$this->assertEqual('TestsAppsPosts', $result);
 	}
 
-	function _setPath($type, $path) {
+	protected function _setPath($type, $path) {
 		if (version_compare(Configure::version(), '1.3') > 0) {
 			App::build(array(Inflector::pluralize($type) => (array)$path));
 			$this->Interactive->objectPath = dirname($path) . DS;
@@ -93,7 +93,7 @@ class InteractiveTestCase extends CakeTestCase {
 			$this->Interactive->objectPath = $path;
 		}
 	}
-	function testGetClass() {
+	public function testGetClass() {
 		$result = $this->Interactive->__getClass('Html');
 		$this->assertTrue(is_a($result, 'HtmlHelper'));
 
@@ -109,7 +109,7 @@ class InteractiveTestCase extends CakeTestCase {
 		$this->assertTrue(is_a($result, 'TestsAppsPostsController'));
 	}
 
-	function testClassCallHelper() {
+	public function testClassCallHelper() {
 		$result = $this->Interactive->__classCall('$html->image("icons/ajax.gif")');
 		$expected = '<img src="img/icons/ajax.gif" alt="" />';
 		$this->assertEqual($expected, $result);
@@ -119,13 +119,13 @@ class InteractiveTestCase extends CakeTestCase {
 		$this->assertPattern($expected, $result);
 	}
 
-	function testClassCallController() {
+	public function testClassCallController() {
 		$this->_setPath('controller', ROOT . DS . CAKE_TESTS . 'test_app' . DS . 'controllers');
 		$result = $this->Interactive->__classCall('$TestsAppsPostsController->uses');
 		$this->assertEqual(array('Post'), $result);
 	}
 
-	function testClassCallComponent() {
+	public function testClassCallComponent() {
 		Configure::write('debug', 0);
 		Configure::write('Security.salt', 'fc4a7a2d16ed61344ff95c87674620c4ece9cea1');
 		$result = $this->Interactive->__classCall('AuthComponent::password("test")');
@@ -133,12 +133,12 @@ class InteractiveTestCase extends CakeTestCase {
 		Configure::write('debug', 2);
 	}
 
-	function testClassCallCore() {
+	public function testClassCallCore() {
 		$result = $this->Interactive->__classCall('Router::url(array("controller" => "posts", "action" => "view", 3))');
 		$this->assertEqual('/posts/view/3', $result);
 	}
 
-	function testClassCallModel() {
+	public function testClassCallModel() {
 		$this->_setPath('model', ROOT . DS . CAKE_TESTS . 'test_app' . DS . 'models');
 		$result = $this->Interactive->__classCall('Post::find("all")');
 		$this->assertEqual(3, count($result));

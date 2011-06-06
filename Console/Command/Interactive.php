@@ -1,18 +1,18 @@
 <?php
 class InteractiveShell extends Shell {
-	var $uses = array('Interactive.Interactive');
-	var $history = array();
-	var $historyCount = 20;
+	public $uses = array('Interactive.Interactive');
+	public $history = array();
+	public $historyCount = 20;
 
-	var $cacheKey = 'interactive_cache';
+	public $cacheKey = 'interactive_cache';
 
-	function startup() {
+	public function startup() {
 		if ($history = Cache::read($this->cacheKey)) {
 			$this->history = array_values($history);
 		}
 	}
 
-	function main() {
+	public function main() {
 		$this->out('Interactive Shell');
 		$this->hr();
 
@@ -59,7 +59,7 @@ class InteractiveShell extends Shell {
 		$this->main();
 	}
 
-	function addHistory($cmd) {
+	public function addHistory($cmd) {
 		$this->history[] = $cmd;
 		if (count($this->history) > $this->historyCount) {
 			reset($this->history);
@@ -69,13 +69,13 @@ class InteractiveShell extends Shell {
 		Cache::write($this->cacheKey, $this->history);
 	}
 
-	function history() {
+	public function history() {
 		foreach($this->history as $i => $history) {
 			$this->out($i . "	" . $history);
 		}
 	}
 
-	function help() {
+	public function help() {
 		$this->hr();
 		$this->out(__('Interactive Shell:', true));
 		$this->hr();
@@ -89,7 +89,7 @@ class InteractiveShell extends Shell {
 		$this->hr();
 	}
 
-	function __display($cmd, $results) {
+	private function __display($cmd, $results) {
 		$this->out($cmd);
 		foreach($results as $result) {
 			if (is_array($result['output'])) {
