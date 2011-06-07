@@ -50,10 +50,7 @@ class Interactive extends InteractiveAppModel {
 
 		$args = array();
 		if (!empty($matches[2])) {
-			$args = explode(',', $matches[2]);
-			foreach($args as $i => $arg) {
-				$args[$i] = eval('return ' . $arg . ';');
-			}
+			$args = eval(sprintf('return array(%s);', $matches[2]));
 		}
 
 		return call_user_func_array(array($Class, $matches[1]), $args);
@@ -68,76 +65,59 @@ class Interactive extends InteractiveAppModel {
 	}
 
 	protected function _getClass($className) {
+		$objectName = $this->_fixClassName($className);
+
 		$this->type = null;
-		$classType = false;
-		$className = $this->_fixClassName($className);
+		$types = array_intersect_key(App::$types, array_flip(array(
+			'component',
+			'helper',
+			'controller',
+			'model',
+		)));
+		foreach($types as $type => $typeInfo) {
+			$objectNameCandidate = $objectName;
+			if (isset($typeInfo['suffix'])) {
+				$objectNameCandidate = preg_replace(sprintf('/%s$/', $typeInfo['suffix']), '', $objectNameCandidate);
+			}
 
-		if ($this->type) {
-			$types = array($this->type);
-		} else {
-			$types = array('model', 'helper');
-		}
+			if (App::import($type, $objectNameCandidate)) {
+				$this->type = $type;
+				$objectName = $objectNameCandidate;
 
-		$class = $className;
-		if (strpos($className, '.') !== false) {
-			list($plugin, $className) = explode('.', $className);
-			$this->objectPath = App::pluginPath($plugin);
-		}
-
-		foreach($types as $type) {
-			$objects = Configure::listObjects(
-				$type,
-				$this->objectPath ? $this->objectPath . Inflector::pluralize($type) . DS : null,
-				$this->objectCache
-			);
-			if (in_array($className, $objects)) {
-				$classType = $type;
+				list($plugin, $className) = pluginSplit($objectName);
+				if (isset($typeInfo['suffix'])) {
+					$className .= $typeInfo['suffix'];
+				}
 				break;
 			}
 		}
 
-		switch ($classType) {
+		switch ($this->type) {
 			case 'model':
-				return ClassRegistry::init($class);
+				return ClassRegistry::init($objectName);
 			case 'controller':
-				App::import('Controller', $class);
-				$className = $className . 'Controller';
 				return new $className();
 			case 'component':
-				App::import('Controller', 'Controller');
-				$Controller = new Controller();
+				App::uses('Controller', 'Controller');
+				$Controller = new Controller(new CakeRequest('/'));
 				$Controller->params['action'] = '';
-				App::import('Component', $class);
-				$className = $className . 'Component';
-				$Class = new $className();
-				$Class->initialize($Controller);
-				$Class->startup($Controller);
-				return $Class;
+				$Component = new $className(new ComponentCollection);
+				$Component->initialize($Controller);
+				$Component->startup($Controller);
+				return $Component;
 			case 'helper':
 				$this->raw = true;
-				App::import('Controller', 'Controller');
-				$Controller = new Controller();
-				$Controller->helpers[] = $class;
-				App::import('View', 'View');
-				$View =& new View($Controller);
-				$loaded = array();
-				$helpers = $View->_loadHelpers($loaded, $Controller->helpers);
-				return $helpers[$className];
+				App::uses('View', 'View');
+				App::uses('Controller', 'Controller');
+				$View = new View(new Controller(new CakeRequest('/')));
+				return $View->loadHelper($objectName);
 		}
 
 		return false;
 	}
 
 	protected function _fixClassName($className) {
-		if (stripos($className, 'component') !== false) {
-			$this->type = 'component';
-		}
-
-		if (stripos($className, 'controller') !== false) {
-			$this->type = 'controller';
-		}
-
-		return ucfirst(preg_replace('/(\$|controller|component)/i', '', $className));
+		return ucfirst(preg_replace('/^\$/', '', $className));
 	}
 
 	protected function _findCmdType($cmd) {
