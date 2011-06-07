@@ -6,7 +6,7 @@
 				if (empty($result['output'])) {
 					__('No results found.');
 				} else {
-					echo $toolbar->makeNeatArray($result['output']);
+					echo $this->Toolbar->makeNeatArray($result['output']);
 				}
 			} else {
 				if (is_bool($result['output'])) {
