@@ -1,4 +1,14 @@
 <?php
+
+App::uses('Controller', 'Controller');
+App::uses('AppController', 'Controller');
+App::uses('Component', 'Controller');
+App::uses('ComponentCollection', 'Controller');
+App::uses('Model', 'Model');
+App::uses('AppModel', 'Model');
+App::uses('View', 'View');
+App::uses('AppHelper', 'View/Helper');
+
 class Interactive extends InteractiveAppModel {
 	public $useTable = false;
 	public $objectCache = true;
@@ -65,55 +75,110 @@ class Interactive extends InteractiveAppModel {
 	}
 
 	protected function _getClass($className) {
-		$objectName = $this->_fixClassName($className);
+		$className = $this->_fixClassName($className);
 
 		$this->type = null;
-		$types = array_intersect_key(App::$types, array_flip(array(
-			'component',
-			'helper',
-			'controller',
-			'model',
-		)));
-		foreach($types as $type => $typeInfo) {
-			$objectNameCandidate = $objectName;
-			if (isset($typeInfo['suffix'])) {
-				$objectNameCandidate = preg_replace(sprintf('/%s$/', $typeInfo['suffix']), '', $objectNameCandidate);
+		$types = array(
+			'controller' => array(
+				'suffix' => 'Controller',
+				'path' => 'Controller',
+			),
+			'component' => array(
+				'suffix' => 'Component',
+				'path' => 'Controller/Component',
+			),
+			'model' => array(
+				'path' => 'Model',
+			),
+			'helper' => array(
+				'suffix' => 'Helper',
+				'path' => 'View/Helper',
+			),
+		);
+
+		$objectName = null;
+		list($plugin, $className) = pluginSplit($className, true);
+		foreach ($types as $type => $typeInfo) {
+			$classNameCandidate = $this->_attachSuffix($className, $typeInfo);
+			$classExists = class_exists($classNameCandidate);
+			if (!$classExists) {
+				App::uses($classNameCandidate, $plugin . $typeInfo['path']);
+				$classExists = class_exists($classNameCandidate);
 			}
 
-			if (App::import($type, $objectNameCandidate)) {
+			if ($classExists) {
 				$this->type = $type;
-				$objectName = $objectNameCandidate;
-
-				list($plugin, $className) = pluginSplit($objectName);
-				if (isset($typeInfo['suffix'])) {
-					$className .= $typeInfo['suffix'];
-				}
+				$className = $classNameCandidate;
+				$objectName = $this->_removeSuffix($className, $typeInfo);
 				break;
 			}
 		}
 
 		switch ($this->type) {
 			case 'model':
-				return ClassRegistry::init($objectName);
+				return ClassRegistry::init($plugin . $objectName);
 			case 'controller':
 				return new $className();
 			case 'component':
-				App::uses('Controller', 'Controller');
-				$Controller = new Controller(new CakeRequest('/'));
-				$Controller->params['action'] = '';
-				$Component = new $className(new ComponentCollection);
+				$Controller = $this->controller();
+				if (isset($Controller->$objectName)) {
+					return $Controller->$objectName;
+				}
+				$Component = new $className(new ComponentCollection($Controller));
 				$Component->initialize($Controller);
 				$Component->startup($Controller);
 				return $Component;
 			case 'helper':
 				$this->raw = true;
-				App::uses('View', 'View');
-				App::uses('Controller', 'Controller');
-				$View = new View(new Controller(new CakeRequest('/')));
-				return $View->loadHelper($objectName);
+				return $this->view()->loadHelper($plugin . $objectName);
 		}
 
 		return false;
+	}
+
+	protected function _attachSuffix($className, $typeInfo) {
+		if (!empty($typeInfo['suffix'])) {
+			$className = $this->_removeSuffix($className, $typeInfo);
+			$className .= $typeInfo['suffix'];
+		}
+
+		return $className;
+	}
+
+	protected function _removeSuffix($className, $typeInfo) {
+		if (!empty($typeInfo['suffix'])) {
+			$className = preg_replace(sprintf('/%s$/', $typeInfo['suffix']), '', $className);
+		}
+
+		return $className;
+	}
+
+	/*
+	 * Setter/Getter of controller
+	 */
+	public function controller($controller = null) {
+		if ($controller !== null) {
+			$this->set('Controller', $controller);
+		} elseif (empty($this->data[$this->alias]['Controller'])) {
+			$Controller = new Controller(new CakeRequest());
+			$Controller->params['action'] = '';
+			$this->set(compact('Controller'));
+		}
+
+		return $this->data[$this->alias]['Controller'];
+	}
+
+	/*
+	 * Setter/Getter of view
+	 */
+	public function view($view = null) {
+		if ($view !== null) {
+			$this->set('View', $view);
+		} elseif (empty($this->data[$this->alias]['View'])) {
+			$this->set('View', new View(new Controller(new CakeRequest())));
+		}
+
+		return $this->data[$this->alias]['View'];
 	}
 
 	protected function _fixClassName($className) {

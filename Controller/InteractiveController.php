@@ -26,6 +26,9 @@ class InteractiveController extends Controller {
 			return;
 		}
 
+		$Controller = $this;
+		$View = new $this->viewClass($this);
+		$this->Interactive->set(compact('Controller', 'View'));
 		$results = $this->Interactive->process($this->data['Interactive']['cmd']);
 		$this->set('results', $results);
 	}

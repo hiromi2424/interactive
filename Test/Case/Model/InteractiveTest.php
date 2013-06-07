@@ -1,7 +1,5 @@
 <?php
 
-App::uses('Model', 'Model');
-App::uses('AppModel', 'Model');
 App::uses('InteractiveAppModel', 'Interactive.Model');
 App::uses('Interactive', 'Interactive.Model');
 
@@ -25,10 +23,12 @@ class InteractiveTestCase extends CakeTestCase {
 		parent::setUp();
 		$this->Interactive = ClassRegistry::init('TestInteractive');
 		$this->Interactive->objectCache = false;
+		$this->Interactive->objectPath = null;
 	}
 
-	public function startTest() {
-		$this->Interactive->objectPath = null;
+	public function tearDown() {
+		unset($this->Interactive);
+		parent::tearDown();
 	}
 
 	public function testInstance() {
@@ -129,7 +129,7 @@ class InteractiveTestCase extends CakeTestCase {
 
 	public function testClassCallHelper() {
 		$result = $this->Interactive->classCall('$this->Html->image("icons/ajax.gif")');
-		$expected = '|<img src="/?img/icons/ajax\.gif" alt="" />|';
+		$expected = '|<img src=".+/?img/icons/ajax\.gif" alt="" />|';
 		$this->assertPattern($expected, $result);
 
 		$result = $this->Interactive->classCall('$this->Form->input("Article.title")');
@@ -138,7 +138,7 @@ class InteractiveTestCase extends CakeTestCase {
 	}
 
 	public function testClassCallController() {
-		$this->_setPath('controller', CAKE . 'test_app' . DS . 'Controller');
+		$this->_setPath('controller', CAKE . 'Test' . DS . 'test_app' . DS . 'Controller');
 		$result = $this->Interactive->classCall('$TestsAppsPostsController->uses');
 		$this->assertEqual(array('Post'), $result);
 	}
@@ -151,6 +151,9 @@ class InteractiveTestCase extends CakeTestCase {
 		$result = $this->Interactive->classCall('AuthComponent::password("test")');
 		$this->assertEqual('cfc21a50c1f69eabdb6687d7f2b33891865f69bb', $result);
 		Configure::write('debug', 2);
+
+		$result = $this->Interactive->classCall('AuthComponent->user()');
+		$this->assertNull($result);
 	}
 
 	public function testClassCallCore() {
@@ -160,9 +163,10 @@ class InteractiveTestCase extends CakeTestCase {
 	}
 
 	public function testClassCallModel() {
-		$this->_setPath('model', CAKE . 'test_app' . DS . 'Model');
+		$this->_setPath('model', CAKE . 'Test' . DS . 'test_app' . DS . 'Model');
 		$result = $this->Interactive->classCall('Post::find("all")');
 		$this->assertEqual(3, count($result));
 		$this->assertEqual('First Post', $result[0]['Post']['title']);
 	}
+
 }
