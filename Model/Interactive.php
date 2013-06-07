@@ -126,7 +126,6 @@ class Interactive extends InteractiveAppModel {
 				}
 				$Component = new $className(new ComponentCollection($Controller));
 				$Component->initialize($Controller);
-				$Component->startup($Controller);
 				return $Component;
 			case 'helper':
 				$this->raw = true;
