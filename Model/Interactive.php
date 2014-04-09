@@ -52,18 +52,7 @@ class Interactive extends InteractiveAppModel {
 			return $this->_codeCall($cmd);
 		}
 
-		preg_match('/^([a-zA-Z_]{1,})\((.{0,})\)/', $function, $matches);
-
-		if (!$matches) {
-			return $Class-> {$function};
-		}
-
-		$args = array();
-		if (!empty($matches[2])) {
-			$args = eval(sprintf('return array(%s);', $matches[2]));
-		}
-
-		return call_user_func_array(array($Class, $matches[1]), $args);
+		return eval("return \$Class->$function;");
 	}
 
 	protected function _sqlCall($cmd) {

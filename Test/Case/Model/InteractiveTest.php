@@ -169,4 +169,11 @@ class InteractiveTestCase extends CakeTestCase {
 		$this->assertEqual('First Post', $result[0]['Post']['title']);
 	}
 
+	public function testClassCallChain() {
+		$this->_setPath('model', CAKE . 'Test' . DS . 'test_app' . DS . 'Model');
+		$result = $this->Interactive->classCall('Post->getDatasource()->config["database"]');
+		$expected = ClassRegistry::init('Post')->getDatasource()->config['database'];
+		$this->assertSame($expected, $result);
+	}
+
 }
